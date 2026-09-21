@@ -3,11 +3,12 @@ package com.uade.ecommerce.service;
 import com.uade.ecommerce.exception.ApiException;
 import com.uade.ecommerce.model.Carrito;
 import com.uade.ecommerce.model.Usuario;
+import com.uade.ecommerce.model.Rol;
 import com.uade.ecommerce.repository.CarritoRepository;
 import com.uade.ecommerce.repository.UsuarioRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -63,8 +64,9 @@ public class UsuarioService {
         usuario.setNombreUsuario(nombreUsuarioNormalizado);
         usuario.setNombre(usuario.getNombre().trim());
         usuario.setApellido(usuario.getApellido().trim());
-        usuario.setContrasenia(passwordEncoder.encode(usuario.getContrasenia())); 
-        
+        usuario.setContrasenia(passwordEncoder.encode(usuario.getContrasenia()));
+        usuario.setRol(Rol.USUARIO);
+
         Usuario usuarioGuardado =
                 usuarioRepository.save(usuario);
 
