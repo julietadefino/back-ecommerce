@@ -1,7 +1,6 @@
 package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.dto.ActualizarStockDTO;
-import com.uade.ecommerce.dto.AgregarFotosDTO;
 import com.uade.ecommerce.dto.ProductoCrearDTO;
 import com.uade.ecommerce.dto.ProductoRespuestaDTO;
 import com.uade.ecommerce.model.Producto;
@@ -122,30 +121,4 @@ public ProductoRespuestaDTO actualizar(
     return ProductoRespuestaDTO.fromEntity(actualizado);
     }
 
-    @PostMapping("/{id}/fotos")
-    public ResponseEntity<ProductoRespuestaDTO> agregarFotos(
-            @PathVariable Long id,
-            @RequestBody AgregarFotosDTO datos
-    ) {
-        Producto actualizado = productoService.agregarFotos(
-                id,
-                datos.getUsuarioId(),
-                datos.getFotos()
-        );
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ProductoRespuestaDTO.fromEntity(actualizado));
-    }
-
-    @DeleteMapping("/{id}/fotos/{fotoId}")
-    public ResponseEntity<Void> eliminarFoto(
-            @PathVariable Long id,
-            @PathVariable Long fotoId,
-            @RequestParam Long usuarioId
-    ) {
-        productoService.eliminarFoto(id, fotoId, usuarioId);
-
-        return ResponseEntity.noContent().build();
-    }
-}
+        }
