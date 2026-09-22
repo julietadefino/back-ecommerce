@@ -41,6 +41,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(respuesta);
     }
 
+    @ExceptionHandler(UsuarioDuplicadoException.class)
+    public ResponseEntity<ErrorRespuestaDTO> handleUsuarioDuplicado(UsuarioDuplicadoException ex) {
+        ErrorRespuestaDTO error = new ErrorRespuestaDTO("USUARIO_DUPLICADO", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+    
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorRespuestaDTO> manejarApiException(
             ApiException exception,
