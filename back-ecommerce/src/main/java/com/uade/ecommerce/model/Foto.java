@@ -30,6 +30,10 @@ public class Foto {
     @Column(nullable = false, length = MAX_LONGITUD_URL)
     private String url;
 
+    /** Imagen principal del producto. Solo una por producto queda en true. */
+    @Column(name = "es_portada", nullable = false)
+    private boolean esPortada;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
