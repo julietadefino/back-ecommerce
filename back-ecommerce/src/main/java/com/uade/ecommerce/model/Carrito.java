@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -24,4 +25,11 @@ public class Carrito {
 
     @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemCarrito> items;
+
+    @Column(name = "ultima_actividad")
+    private LocalDateTime ultimaActividad = LocalDateTime.now();
+
+    public void registrarActividad() {
+        this.ultimaActividad = LocalDateTime.now();
+    }
 }
