@@ -1,6 +1,7 @@
 package com.uade.ecommerce.service;
 
 import com.uade.ecommerce.exception.ApiException;
+import com.uade.ecommerce.exception.ItemCarritoNoEncontradoException;
 import com.uade.ecommerce.model.Carrito;
 import com.uade.ecommerce.model.ItemCarrito;
 import com.uade.ecommerce.model.Producto;
@@ -8,10 +9,12 @@ import com.uade.ecommerce.repository.CarritoRepository;
 import com.uade.ecommerce.repository.ItemCarritoRepository;
 import com.uade.ecommerce.repository.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +32,9 @@ public class CarritoService {
     private ProductoRepository productoRepository;
 
     public Carrito getByUsuario(Long usuarioId) {
-        return buscarCarrito(usuarioId);
+        Carrito carrito = buscarCarrito(usuarioId);
+        carrito.registrarActividad();
+        return carrito;
     }
 
     public Carrito agregarProducto(
@@ -92,6 +97,7 @@ public class CarritoService {
             obtenerItems(carrito).add(nuevoItem);
         }
 
+        carrito.registrarActividad();
         return carritoRepository.save(carrito);
     }
 
@@ -148,6 +154,7 @@ public class CarritoService {
         item.setCantidad(cantidad);
         itemCarritoRepository.save(item);
 
+        carrito.registrarActividad();
         return carritoRepository.save(carrito);
     }
 
@@ -156,6 +163,7 @@ public class CarritoService {
 
         obtenerItems(carrito).clear();
 
+        carrito.registrarActividad();
         return carritoRepository.save(carrito);
     }
 
@@ -201,9 +209,32 @@ public class CarritoService {
         }
 
         carrito.getItems().clear();
+        carrito.registrarActividad();
         carritoRepository.save(carrito);
 
         return total;
+    }
+
+    /**
+     * Vacía los carritos cuya última actividad supera las 24 horas.
+     * Corre automáticamente todos los días a las 03:00.
+     */
+    @Scheduled(cron = "0 0 3 * * *")
+    public void limpiarCarritosInactivos() {
+        LocalDateTime limite = LocalDateTime.now().minusHours(24);
+
+        for (Carrito carrito
+                : carritoRepository.findByUltimaActividadBefore(limite)) {
+            List<ItemCarrito> items = carrito.getItems();
+
+            if (items == null || items.isEmpty()) {
+                continue;
+            }
+
+            items.clear();
+            carrito.registrarActividad();
+            carritoRepository.save(carrito);
+        }
     }
 
     private List<ItemCarrito> obtenerItems(Carrito carrito) {
@@ -221,7 +252,7 @@ public class CarritoService {
         ItemCarrito item = itemCarritoRepository
                 .findById(itemId)
                 .orElseThrow(() ->
-                        ApiException.notFound(
+                        new ItemCarritoNoEncontradoException(
                                 "Ítem del carrito no encontrado"
                         )
                 );
@@ -244,6 +275,7 @@ public class CarritoService {
         obtenerItems(carrito).remove(item);
         itemCarritoRepository.delete(item);
 
+        carrito.registrarActividad();
         return carritoRepository.save(carrito);
     }
 
