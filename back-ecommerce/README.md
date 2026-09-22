@@ -1,13 +1,6 @@
-api rest - backend e-commerce grupo 7
+# API REST - Backend E-commerce | Grupo 7
 
-API REST desarrollada con spring boot y java para gestionar un e-commerce. Permite la administración de usuarios con autenticación, y un navegar un catálogo de productos categorizados con control de stock. Incluye validaciones de entrada, manejo de fotos, y un sistema de carrito de compras hasta el checkout. La persistencia se gestiona con jpa/hibernate sobre mySQL, usando una base H2 en memoria para garantizar pruebas automatizadas aisladas.
-
-Integrantes del grupo:
-BONDIO, BENJAMIN
-CASELLA DAGOSTINO, JULIÁN
-DEFINO, JULIETA
-MENDES GOUVEIA, JULIAN AGUSTIN
-REBUFFO, IAN FRANCO
-SALAMA, VALENTINA CLARA
-SCERVINO, IGNACIO RAUL
-STELMACZONEK, ALAN TOBIAS
+API REST desarrollada con Spring Boot y Java para gestionar usuarios, productos, categorías, fotos, carritos y checkout.
+Utiliza JPA/Hibernate con MySQL, H2 para pruebas automatizadas, validaciones, manejo global de errores y autenticación JWT.
+## Integrantes
+Benjamín Bondio; Julián Casella Dagostino; Julieta Defino; Julián Agustín Mendes Gouveia; Ian Franco Rebuffo; Valentina Clara Salama; Ignacio Raúl Scervino; Alan Tobías Stelmaczonek.
