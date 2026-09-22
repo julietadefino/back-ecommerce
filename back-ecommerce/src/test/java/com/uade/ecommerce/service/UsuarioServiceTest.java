@@ -1,6 +1,7 @@
 package com.uade.ecommerce.service;
 
 import com.uade.ecommerce.exception.ApiException;
+import com.uade.ecommerce.exception.UsuarioDuplicadoException;
 import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.repository.CarritoRepository;
 import com.uade.ecommerce.repository.UsuarioRepository;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -59,6 +61,20 @@ class UsuarioServiceTest {
     }
 
     @Test
+    void registrar_conMailExistente_debeLanzarUsuarioDuplicadoException() {
+        when(usuarioRepository.existsByMail("nacho@ejemplo.com")).thenReturn(true);
+
+        UsuarioDuplicadoException excepcion = assertThrows(
+                UsuarioDuplicadoException.class,
+                () -> usuarioService.registrar(usuarioPrueba)
+        );
+
+        assertEquals(HttpStatus.CONFLICT, excepcion.getStatus());
+        assertEquals("Ya existe un usuario registrado con ese mail", excepcion.getMessage());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
     void login_conCredencialesCorrectas_debeRetornarUsuario() {
         Usuario usuarioEnBD = new Usuario();
         usuarioEnBD.setMail("nacho@ejemplo.com");
@@ -89,5 +105,31 @@ class UsuarioServiceTest {
 
         assertEquals("Usuario o contraseña incorrectos", excepcion.getMessage());
         verify(passwordEncoder, times(1)).matches("ContraseniaIncorrecta", "$2a$10$EncodedPasswordHash");
+    }
+
+    @Test
+    void login_trasCincoIntentosFallidos_debeBloquearTemporalmenteLaCuenta() {
+        Usuario usuarioEnBD = new Usuario();
+        usuarioEnBD.setMail("nacho@ejemplo.com");
+        usuarioEnBD.setContrasenia("$2a$10$EncodedPasswordHash");
+
+        when(usuarioRepository.findByMail("nacho@ejemplo.com")).thenReturn(Optional.of(usuarioEnBD));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        for (int intento = 1; intento < 5; intento++) {
+            ApiException excepcion = assertThrows(ApiException.class,
+                    () -> usuarioService.login("nacho@ejemplo.com", "incorrecta"));
+            assertEquals(HttpStatus.UNAUTHORIZED, excepcion.getStatus());
+        }
+
+        ApiException bloqueo = assertThrows(ApiException.class,
+                () -> usuarioService.login("nacho@ejemplo.com", "incorrecta"));
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, bloqueo.getStatus());
+
+        ApiException intentoDuranteBloqueo = assertThrows(ApiException.class,
+                () -> usuarioService.login("nacho@ejemplo.com", "correcta"));
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, intentoDuranteBloqueo.getStatus());
+        verify(usuarioRepository, times(5)).findByMail("nacho@ejemplo.com");
+        verify(passwordEncoder, times(5)).matches("incorrecta", "$2a$10$EncodedPasswordHash");
     }
 }
