@@ -1,10 +1,12 @@
 package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.dto.LoginDTO;
+import com.uade.ecommerce.dto.LoginRespuestaDTO;
 import com.uade.ecommerce.dto.UsuarioRegistroDTO;
 import com.uade.ecommerce.dto.UsuarioRespuestaDTO;
 import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.service.UsuarioService;
+import com.uade.ecommerce.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private JwtService jwtService;
 
     @GetMapping
     public List<UsuarioRespuestaDTO> getAll() {
@@ -47,12 +52,13 @@ public class UsuarioController {
     public ResponseEntity<UsuarioRespuestaDTO> registrar(
             @Valid @RequestBody UsuarioRegistroDTO datos
     ) {
-        Usuario usuario = new Usuario();
-        usuario.setNombreUsuario(datos.getNombreUsuario());
-        usuario.setMail(datos.getMail());
-        usuario.setContrasenia(datos.getContrasenia());
-        usuario.setNombre(datos.getNombre());
-        usuario.setApellido(datos.getApellido());
+        Usuario usuario = Usuario.builder()
+                .nombreUsuario(datos.getNombreUsuario())
+                .mail(datos.getMail())
+                .contrasenia(datos.getContrasenia())
+                .nombre(datos.getNombre())
+                .apellido(datos.getApellido())
+                .build();
 
         Usuario registrado =
                 usuarioService.registrar(usuario);
@@ -63,7 +69,7 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    public UsuarioRespuestaDTO login(
+    public ResponseEntity<LoginRespuestaDTO> login(
             @Valid @RequestBody LoginDTO datos
     ) {
         Usuario usuario = usuarioService.login(
@@ -71,6 +77,10 @@ public class UsuarioController {
                 datos.getContrasenia()
         );
 
-        return UsuarioRespuestaDTO.fromEntity(usuario);
+        return ResponseEntity.ok(new LoginRespuestaDTO(
+                jwtService.generarToken(usuario),
+                "Bearer",
+                UsuarioRespuestaDTO.fromEntity(usuario)
+        ));
     }
 }
