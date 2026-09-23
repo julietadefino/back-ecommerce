@@ -2,7 +2,6 @@ package com.uade.ecommerce.service;
 
 import com.uade.ecommerce.exception.ApiException;
 import com.uade.ecommerce.model.Categoria;
-import com.uade.ecommerce.model.Foto;
 import com.uade.ecommerce.model.Producto;
 import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.repository.CategoriaRepository;
@@ -34,6 +33,9 @@ public class ProductoService {
     @Autowired
     private ItemCarritoRepository itemCarritoRepository;
 
+    @Autowired
+    private FotoService fotoService;
+
     public List<Producto> getAll() {
         return productoRepository.findAllByOrderByNombreAsc();
     }
@@ -45,6 +47,28 @@ public class ProductoService {
     public List<Producto> getByCategoria(Long categoriaId) {
         return productoRepository
                 .findByCategoriaIdOrderByNombreAsc(categoriaId);
+    }
+
+    /**
+     * Busqueda combinada de productos por categoria, nombre (parcial,
+     * sin distinguir mayusculas) y disponibilidad de stock. Cualquiera
+     * de los tres parametros puede omitirse (null) y esa condicion no
+     * se aplica. El resultado siempre queda ordenado alfabeticamente.
+     */
+    public List<Producto> buscar(
+            Long categoriaId,
+            String nombre,
+            Boolean conStock
+    ) {
+        String nombreFiltro = (nombre == null || nombre.isBlank())
+                ? null
+                : nombre.trim();
+
+        return productoRepository.buscar(
+                categoriaId,
+                nombreFiltro,
+                conStock
+        );
     }
 
     public Producto crear(
@@ -76,7 +100,7 @@ public class ProductoService {
         producto.setNombre(producto.getNombre().trim());
         producto.setCategoria(categoria);
         producto.setUsuario(usuario);
-        producto.setFotos(crearFotos(producto, urlsFotos));
+        fotoService.reemplazarFotos(producto, urlsFotos);
 
         return productoRepository.save(producto);
     }
@@ -102,9 +126,6 @@ public class ProductoService {
                         )
                 );
 
-        List<Foto> fotosNuevas =
-                crearFotos(producto, urlsFotos);
-
         producto.setNombre(
                 nuevosDatos.getNombre().trim()
         );
@@ -115,13 +136,7 @@ public class ProductoService {
         producto.setStock(nuevosDatos.getStock());
         producto.setCategoria(categoria);
 
-        if (producto.getFotos() == null) {
-            producto.setFotos(new ArrayList<>());
-        } else {
-            producto.getFotos().clear();
-        }
-
-        producto.getFotos().addAll(fotosNuevas);
+        fotoService.reemplazarFotos(producto, urlsFotos);
 
         return productoRepository.save(producto);
     }
@@ -235,35 +250,4 @@ public class ProductoService {
         }
     }
 
-    private List<Foto> crearFotos(
-            Producto producto,
-            List<String> urlsFotos
-    ) {
-        if (urlsFotos == null || urlsFotos.isEmpty()) {
-            throw ApiException.badRequest(
-                    "El producto debe tener al menos una foto"
-            );
-        }
-
-        List<Foto> fotos = new ArrayList<>();
-
-        for (String url : urlsFotos) {
-            if (url == null || url.isBlank()) {
-                continue;
             }
-
-            Foto foto = new Foto();
-            foto.setUrl(url.trim());
-            foto.setProducto(producto);
-            fotos.add(foto);
-        }
-
-        if (fotos.isEmpty()) {
-            throw ApiException.badRequest(
-                    "El producto debe tener al menos una foto válida"
-            );
-        }
-
-        return fotos;
-    }
-}

@@ -1,8 +1,10 @@
 package com.uade.ecommerce.exception;
 
-public class CarritoVacioException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class CarritoVacioException extends ApiException {
 
     public CarritoVacioException(String message) {
-        super(message);
+        super(HttpStatus.BAD_REQUEST, message);
     }
 }

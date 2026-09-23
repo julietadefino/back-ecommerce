@@ -2,7 +2,6 @@ package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.dto.CheckoutRequestDTO;
 import com.uade.ecommerce.dto.OrdenRespuestaDTO;
-import com.uade.ecommerce.model.OrdenCompra;
 import com.uade.ecommerce.service.OrdenService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -30,20 +29,19 @@ public class OrdenController {
     public ResponseEntity<OrdenRespuestaDTO> checkout(
             @Valid @RequestBody CheckoutRequestDTO request
     ) {
-        OrdenCompra orden = ordenService.checkout(request.getUsuarioId());
+        OrdenRespuestaDTO orden = ordenService.checkout(request);
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(OrdenRespuestaDTO.fromEntity(orden));
+                .body(orden);
     }
 
     @GetMapping("/historial/{usuarioId}")
     public ResponseEntity<List<OrdenRespuestaDTO>> obtenerHistorial(
             @PathVariable Long usuarioId
     ) {
-        List<OrdenRespuestaDTO> historial = ordenService.obtenerHistorial(usuarioId)
-                .stream()
-                .map(OrdenRespuestaDTO::fromEntity)
-                .toList();
-        return ResponseEntity.ok(historial);
+        return ResponseEntity.ok(
+                ordenService.obtenerHistorial(usuarioId)
+        );
     }
 }

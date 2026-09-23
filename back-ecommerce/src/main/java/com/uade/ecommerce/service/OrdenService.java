@@ -1,5 +1,7 @@
 package com.uade.ecommerce.service;
 
+import com.uade.ecommerce.dto.CheckoutRequestDTO;
+import com.uade.ecommerce.dto.OrdenRespuestaDTO;
 import com.uade.ecommerce.exception.CarritoVacioException;
 import com.uade.ecommerce.exception.StockInsuficienteException;
 import com.uade.ecommerce.model.Carrito;
@@ -38,7 +40,9 @@ public class OrdenService {
     }
 
     @Transactional
-    public OrdenCompra checkout(Long usuarioId) {
+    public OrdenRespuestaDTO checkout(CheckoutRequestDTO request) {
+        Long usuarioId = request.getUsuarioId();
+
         Carrito carrito = carritoRepository.findByUsuarioId(usuarioId)
                 .orElseThrow(() -> new CarritoVacioException(
                         "No existe un carrito para el usuario"
@@ -67,6 +71,7 @@ public class OrdenService {
                     .orElseThrow(() -> new StockInsuficienteException(
                             "Stock insuficiente para el producto: " + entry.getKey()
                     ));
+
             productosDisponibles.put(entry.getKey(), producto);
         }
 
@@ -76,8 +81,12 @@ public class OrdenService {
         orden.setCodigoSeguimiento(generarCodigoSeguimiento());
 
         BigDecimal total = BigDecimal.ZERO;
+
         for (ItemCarrito item : items) {
-            Producto producto = productosDisponibles.get(item.getProducto().getId());
+            Producto producto = productosDisponibles.get(
+                    item.getProducto().getId()
+            );
+
             BigDecimal subtotal = producto.getPrecio()
                     .multiply(BigDecimal.valueOf(item.getCantidad()));
 
@@ -88,25 +97,35 @@ public class OrdenService {
             detalle.setSubtotal(subtotal);
             orden.agregarDetalle(detalle);
 
-            producto.setStock(producto.getStock() - item.getCantidad());
+            producto.setStock(
+                    producto.getStock() - item.getCantidad()
+            );
+
             productoRepository.save(producto);
             total = total.add(subtotal);
         }
 
         orden.setTotal(total);
+
         carrito.getItems().clear();
         carritoRepository.save(carrito);
 
-        return ordenRepository.save(orden);
+        OrdenCompra ordenGuardada = ordenRepository.save(orden);
+        return OrdenRespuestaDTO.fromEntity(ordenGuardada);
     }
 
     @Transactional(readOnly = true)
-    public List<OrdenCompra> obtenerHistorial(Long usuarioId) {
-        return ordenRepository.findByUsuarioIdOrderByFechaCreacionDesc(usuarioId);
+    public List<OrdenRespuestaDTO> obtenerHistorial(Long usuarioId) {
+        return ordenRepository
+                .findByUsuarioIdOrderByFechaCreacionDesc(usuarioId)
+                .stream()
+                .map(OrdenRespuestaDTO::fromEntity)
+                .toList();
     }
 
     private String generarCodigoSeguimiento() {
         String codigo;
+
         do {
             codigo = UUID.randomUUID()
                     .toString()
@@ -114,6 +133,7 @@ public class OrdenService {
                     .substring(0, 12)
                     .toUpperCase();
         } while (ordenRepository.existsByCodigoSeguimiento(codigo));
+
         return codigo;
     }
 }

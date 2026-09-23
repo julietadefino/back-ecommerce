@@ -1,13 +1,12 @@
 package com.uade.ecommerce.controller;
 
 import com.uade.ecommerce.dto.CategoriaDTO;
-import com.uade.ecommerce.model.Categoria;
 import com.uade.ecommerce.service.CategoriaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.uade.ecommerce.exception.ApiException;
 
 import java.util.List;
 
@@ -19,48 +18,57 @@ public class CategoriaController {
     private CategoriaService categoriaService;
 
     @GetMapping
-    public List<CategoriaDTO> getAll() {
-        return categoriaService.getAll()
-                .stream()
-                .map(CategoriaDTO::fromEntity)
-                .toList();
+    public ResponseEntity<List<CategoriaDTO>> getAll() {
+        return ResponseEntity.ok(
+                categoriaService.getAll()
+        );
     }
 
     @GetMapping("/{id}")
-    public CategoriaDTO getById(@PathVariable Long id) {
-        Categoria categoria = categoriaService.getById(id)
-                .orElseThrow(() ->
-                        ApiException.notFound(
-                                "Categoría no encontrada"
-                            )
-                );
+    public ResponseEntity<CategoriaDTO> getById(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                categoriaService.getById(id)
+        );
+    }
 
-        return CategoriaDTO.fromEntity(categoria);
+    @GetMapping("/buscar")
+    public ResponseEntity<CategoriaDTO> buscarPorNombre(
+            @RequestParam String nombre,
+            @RequestParam(
+                    defaultValue = "true"
+            ) boolean ignorarMayusculas
+    ) {
+        return ResponseEntity.ok(
+                categoriaService.buscarPorNombre(
+                        nombre,
+                        ignorarMayusculas
+                )
+        );
     }
 
     @PostMapping
     public ResponseEntity<CategoriaDTO> crear(
-            @RequestBody CategoriaDTO datos
+            @Valid @RequestBody CategoriaDTO datos
     ) {
-        Categoria categoria = new Categoria();
-        categoria.setNombre(datos.getNombre());
-
-        Categoria guardada = categoriaService.crear(categoria);
+        CategoriaDTO guardada =
+                categoriaService.crear(datos);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(CategoriaDTO.fromEntity(guardada));
+                .body(guardada);
     }
 
     @PutMapping("/{id}")
-    public CategoriaDTO actualizar(
+    public ResponseEntity<CategoriaDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody CategoriaDTO datos
+            @Valid @RequestBody CategoriaDTO datos
     ) {
-        Categoria actualizada =
-                categoriaService.actualizar(id, datos.getNombre());
+        CategoriaDTO actualizada =
+                categoriaService.actualizar(id, datos);
 
-        return CategoriaDTO.fromEntity(actualizada);
+        return ResponseEntity.ok(actualizada);
     }
 
     @DeleteMapping("/{id}")
@@ -68,6 +76,7 @@ public class CategoriaController {
             @PathVariable Long id
     ) {
         categoriaService.delete(id);
+
         return ResponseEntity.noContent().build();
     }
 }

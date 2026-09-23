@@ -21,6 +21,9 @@ public class Categoria {
     @Column(nullable = false, unique = true)
     private String nombre;
 
+    @Column(nullable = false)
+    private boolean activo = true;
+
     @OneToMany(mappedBy = "categoria")
     private List<Producto> productos;
 }

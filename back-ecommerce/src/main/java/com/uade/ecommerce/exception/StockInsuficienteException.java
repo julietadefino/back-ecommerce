@@ -1,8 +1,10 @@
 package com.uade.ecommerce.exception;
 
-public class StockInsuficienteException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class StockInsuficienteException extends ApiException {
 
     public StockInsuficienteException(String message) {
-        super(message);
+        super(HttpStatus.CONFLICT, message);
     }
 }
