@@ -11,6 +11,13 @@ import com.uade.ecommerce.repository.ItemCarritoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.uade.ecommerce.exception.ProductoInvalidoException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.math.BigDecimal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -49,12 +56,7 @@ public class ProductoService {
                 .findByCategoriaIdOrderByNombreAsc(categoriaId);
     }
 
-    /**
-     * Busqueda combinada de productos por categoria, nombre (parcial,
-     * sin distinguir mayusculas) y disponibilidad de stock. Cualquiera
-     * de los tres parametros puede omitirse (null) y esa condicion no
-     * se aplica. El resultado siempre queda ordenado alfabeticamente.
-     */
+
     public List<Producto> buscar(
             Long categoriaId,
             String nombre,
@@ -68,6 +70,38 @@ public class ProductoService {
                 categoriaId,
                 nombreFiltro,
                 conStock
+        );
+    }
+    
+    public Page<Producto> buscarPaginado(
+            Long categoriaId,
+            String nombre,
+            Boolean conStock,
+            BigDecimal precioMin,
+            BigDecimal precioMax,
+            Pageable pageable
+    ) {
+        String nombreFiltro = (nombre == null || nombre.isBlank())
+                ? null
+                : nombre.trim();
+
+        if (precioMin != null && precioMin.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ProductoInvalidoException("El precio minimo no puede ser negativo");
+        }
+        if (precioMax != null && precioMax.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ProductoInvalidoException("El precio maximo no puede ser negativo");
+        }
+        if (precioMin != null && precioMax != null && precioMin.compareTo(precioMax) > 0) {
+            throw new ProductoInvalidoException("El precio minimo no puede ser mayor al precio maximo");
+        }
+
+        return productoRepository.buscarPaginado(
+                categoriaId,
+                nombreFiltro,
+                conStock,
+                precioMin,
+                precioMax,
+                pageable
         );
     }
 
@@ -147,7 +181,7 @@ public class ProductoService {
             Integer nuevoStock
     ) {
         if (nuevoStock == null || nuevoStock < 0) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El stock no puede ser negativo"
             );
         }
@@ -173,7 +207,7 @@ public class ProductoService {
 
     private Producto buscarProducto(Long productoId) {
         if (productoId == null) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El ID del producto es obligatorio"
             );
         }
@@ -191,7 +225,7 @@ public class ProductoService {
             Long usuarioId
     ) {
         if (usuarioId == null) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El ID del usuario es obligatorio"
             );
         }
@@ -206,28 +240,28 @@ public class ProductoService {
     private void validarProducto(Producto producto) {
         if (producto.getNombre() == null ||
                 producto.getNombre().isBlank()) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El nombre del producto es obligatorio"
             );
         }
 
         if (producto.getDescripcion() == null ||
                 producto.getDescripcion().isBlank()) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "La descripción del producto es obligatoria"
             );
         }
 
         if (producto.getPrecio() == null ||
                 producto.getPrecio().compareTo(BigDecimal.ZERO) < 0) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El precio no puede ser negativo"
             );
         }
 
         if (producto.getStock() == null ||
                 producto.getStock() < 0) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El stock no puede ser negativo"
             );
         }
@@ -238,13 +272,13 @@ public class ProductoService {
             Long usuarioId
     ) {
         if (categoriaId == null) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "La categoría es obligatoria"
             );
         }
 
         if (usuarioId == null) {
-            throw ApiException.badRequest(
+            throw new ProductoInvalidoException(
                     "El usuario es obligatorio"
             );
         }

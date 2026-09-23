@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.uade.ecommerce.exception.ApiException;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import java.util.List;
 
@@ -36,6 +40,30 @@ public class ProductoController {
         return productos.stream()
                 .map(ProductoRespuestaDTO::fromEntity)
                 .toList();
+    }
+
+    /**
+     * Busqueda avanzada: mismos filtros que getAll() + rango de precio,
+     * con paginacion y orden dinamico via Pageable. El parametro "sort"
+     * lo resuelve Spring solo desde el query param (ej: ?sort=precio,desc),
+     * no hace falta declararlo a mano.
+     *
+     * Ejemplos:
+     *  GET /api/productos/buscar?precioMin=1000&precioMax=5000
+     *  GET /api/productos/buscar?conStock=true&page=0&size=5&sort=precio,asc
+     */
+    @GetMapping("/buscar")
+    public Page<ProductoRespuestaDTO> buscarPaginado(
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Boolean conStock,
+            @RequestParam(required = false) BigDecimal precioMin,
+            @RequestParam(required = false) BigDecimal precioMax,
+            @PageableDefault(size = 10, sort = "nombre") Pageable pageable
+    ) {
+        return productoService.buscarPaginado(
+                categoriaId, nombre, conStock, precioMin, precioMax, pageable
+        ).map(ProductoRespuestaDTO::fromEntity);
     }
 
     @GetMapping("/{id}")

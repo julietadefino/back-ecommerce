@@ -1,14 +1,19 @@
 package com.uade.ecommerce.repository;
 
-import com.uade.ecommerce.model.Producto;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.uade.ecommerce.model.Producto;
 
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
@@ -40,5 +45,25 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             @Param("categoriaId") Long categoriaId,
             @Param("nombre") String nombre,
             @Param("conStock") Boolean conStock
+    );
+    
+    // Igual que "buscar", pero suma rango de precio (opcional) y pageable/sort.
+    // Sin ORDER BY fijo a proposito: el orden lo define el Pageable que llega
+    // desde el controller (ej: ?sort=precio,desc)
+    @Query("SELECT p FROM Producto p WHERE " +
+            "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) " +
+            "AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+            "AND (:conStock IS NULL " +
+            "     OR (:conStock = TRUE AND p.stock > 0) " +
+            "     OR (:conStock = FALSE AND p.stock <= 0)) " +
+            "AND (:precioMin IS NULL OR p.precio >= :precioMin) " +
+            "AND (:precioMax IS NULL OR p.precio <= :precioMax)")
+    Page<Producto> buscarPaginado(
+            @Param("categoriaId") Long categoriaId,
+            @Param("nombre") String nombre,
+            @Param("conStock") Boolean conStock,
+            @Param("precioMin") BigDecimal precioMin,
+            @Param("precioMax") BigDecimal precioMax,
+            Pageable pageable
     );
 }
