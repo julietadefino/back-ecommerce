@@ -1,7 +1,10 @@
 package com.uade.ecommerce.exception;
 
-public class CalificacionInvalidaException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class CalificacionInvalidaException extends ApiException {
+
     public CalificacionInvalidaException(String message) {
-        super(message);
+        super(HttpStatus.BAD_REQUEST, message);
     }
 }

@@ -1,7 +1,10 @@
 package com.uade.ecommerce.exception;
 
-public class ReseniaDuplicadaException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class ReseniaDuplicadaException extends ApiException {
+
     public ReseniaDuplicadaException(String message) {
-        super(message);
+        super(HttpStatus.CONFLICT, message);
     }
 }
