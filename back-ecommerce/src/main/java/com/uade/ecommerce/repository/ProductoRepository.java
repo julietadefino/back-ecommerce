@@ -19,8 +19,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @EntityGraph(attributePaths = "fotos")
     List<Producto> findByCategoriaIdOrderByNombreAsc(Long categoriaId);
 
+
+    Optional<Producto> findByIdAndStockGreaterThanEqual(Long id, Integer stock);
+
     @EntityGraph(attributePaths = "fotos")
     Optional<Producto> findById(Long id);
+
 
     boolean existsByCategoriaId(Long categoriaId);
 
