@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(respuesta);
     }
-
+    
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorRespuestaDTO> manejarApiException(
             ApiException exception,
