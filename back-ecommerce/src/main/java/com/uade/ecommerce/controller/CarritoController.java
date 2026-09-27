@@ -21,17 +21,17 @@ public class CarritoController {
     private CarritoService carritoService;
 
     @GetMapping("/{usuarioId}")
-    public CarritoRespuestaDTO getByUsuario(
+    public ResponseEntity<CarritoRespuestaDTO> getByUsuario(
             @PathVariable Long usuarioId
     ) {
         Carrito carrito =
                 carritoService.getByUsuario(usuarioId);
 
-        return CarritoRespuestaDTO.fromEntity(carrito);
+        return ResponseEntity.ok(CarritoRespuestaDTO.fromEntity(carrito));
     }
 
     @PostMapping("/items")
-    public CarritoRespuestaDTO agregarProducto(
+    public ResponseEntity<CarritoRespuestaDTO> agregarProducto(
             @Valid @RequestBody AgregarItemCarritoDTO datos
     ) {
         Carrito carrito = carritoService.agregarProducto(
@@ -40,11 +40,11 @@ public class CarritoController {
                 datos.getCantidad()
         );
 
-        return CarritoRespuestaDTO.fromEntity(carrito);
+        return ResponseEntity.ok(CarritoRespuestaDTO.fromEntity(carrito));
     }
 
     @PatchMapping("/{usuarioId}/items/{itemId}")
-    public CarritoRespuestaDTO actualizarCantidad(
+    public ResponseEntity<CarritoRespuestaDTO> actualizarCantidad(
             @PathVariable Long usuarioId,
             @PathVariable Long itemId,
             @RequestBody ActualizarCantidadItemDTO datos
@@ -55,11 +55,11 @@ public class CarritoController {
                 datos.getCantidad()
         );
 
-        return CarritoRespuestaDTO.fromEntity(carrito);
+        return ResponseEntity.ok(CarritoRespuestaDTO.fromEntity(carrito));
     }
 
     @DeleteMapping("/{usuarioId}/items/{itemId}")
-    public CarritoRespuestaDTO eliminarItem(
+    public ResponseEntity<CarritoRespuestaDTO> eliminarItem(
             @PathVariable Long usuarioId,
             @PathVariable Long itemId
     ) {
@@ -68,17 +68,17 @@ public class CarritoController {
                 itemId
         );
 
-        return CarritoRespuestaDTO.fromEntity(carrito);
+        return ResponseEntity.ok(CarritoRespuestaDTO.fromEntity(carrito));
     }
 
     @DeleteMapping("/{usuarioId}/items")
-    public CarritoRespuestaDTO vaciar(
+    public ResponseEntity<CarritoRespuestaDTO> vaciar(
             @PathVariable Long usuarioId
     ) {
         Carrito carrito =
                 carritoService.vaciar(usuarioId);
 
-        return CarritoRespuestaDTO.fromEntity(carrito);
+        return ResponseEntity.ok(CarritoRespuestaDTO.fromEntity(carrito));
     }
 
     @PostMapping("/{usuarioId}/checkout")

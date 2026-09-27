@@ -1,5 +1,9 @@
 package com.uade.ecommerce.service;
 
+import com.uade.ecommerce.dto.LoginDTO;
+import com.uade.ecommerce.dto.LoginRespuestaDTO;
+import com.uade.ecommerce.dto.UsuarioRegistroDTO;
+import com.uade.ecommerce.dto.UsuarioRespuestaDTO;
 import com.uade.ecommerce.exception.ApiException;
 import com.uade.ecommerce.exception.UsuarioDuplicadoException;
 import com.uade.ecommerce.model.Carrito;
@@ -7,6 +11,7 @@ import com.uade.ecommerce.model.Usuario;
 import com.uade.ecommerce.model.Rol;
 import com.uade.ecommerce.repository.CarritoRepository;
 import com.uade.ecommerce.repository.UsuarioRepository;
+import com.uade.ecommerce.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,6 +45,42 @@ public class UsuarioService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
+
+    public List<UsuarioRespuestaDTO> listarRespuestas() {
+        return getAll().stream()
+                .map(UsuarioRespuestaDTO::fromEntity)
+                .toList();
+    }
+
+    public UsuarioRespuestaDTO buscarRespuesta(Long id) {
+        return getById(id)
+                .map(UsuarioRespuestaDTO::fromEntity)
+                .orElseThrow(() -> ApiException.notFound("Usuario no encontrado"));
+    }
+
+    public UsuarioRespuestaDTO registrar(UsuarioRegistroDTO datos) {
+        Usuario usuario = Usuario.builder()
+                .nombreUsuario(datos.getNombreUsuario())
+                .mail(datos.getMail())
+                .contrasenia(datos.getContrasenia())
+                .nombre(datos.getNombre())
+                .apellido(datos.getApellido())
+                .build();
+
+        return UsuarioRespuestaDTO.fromEntity(registrar(usuario));
+    }
+
+    public LoginRespuestaDTO login(LoginDTO datos) {
+        Usuario usuario = login(datos.getMail(), datos.getContrasenia());
+        return new LoginRespuestaDTO(
+                jwtService.generarToken(usuario),
+                "Bearer",
+                UsuarioRespuestaDTO.fromEntity(usuario)
+        );
+    }
 
     public List<Usuario> getAll() {
         return usuarioRepository.findAll();

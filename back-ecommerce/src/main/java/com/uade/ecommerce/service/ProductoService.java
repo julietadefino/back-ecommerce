@@ -1,5 +1,8 @@
 package com.uade.ecommerce.service;
 
+import com.uade.ecommerce.dto.ActualizarStockDTO;
+import com.uade.ecommerce.dto.ProductoCrearDTO;
+import com.uade.ecommerce.dto.ProductoRespuestaDTO;
 import com.uade.ecommerce.exception.ApiException;
 import com.uade.ecommerce.model.Categoria;
 import com.uade.ecommerce.model.Producto;
@@ -12,9 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.uade.ecommerce.exception.ProductoInvalidoException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,6 +40,57 @@ public class ProductoService {
 
     @Autowired
     private FotoService fotoService;
+
+    public List<ProductoRespuestaDTO> buscarRespuestas(
+            Long categoriaId, String nombre, Boolean conStock
+    ) {
+        return buscar(categoriaId, nombre, conStock).stream()
+                .map(ProductoRespuestaDTO::fromEntity)
+                .toList();
+    }
+
+    public Page<ProductoRespuestaDTO> buscarPaginadoRespuestas(
+            Long categoriaId, String nombre, Boolean conStock,
+            BigDecimal precioMin, BigDecimal precioMax, Pageable pageable
+    ) {
+        return buscarPaginado(categoriaId, nombre, conStock, precioMin, precioMax, pageable)
+                .map(ProductoRespuestaDTO::fromEntity);
+    }
+
+    public ProductoRespuestaDTO buscarRespuesta(Long id) {
+        return getById(id)
+                .map(ProductoRespuestaDTO::fromEntity)
+                .orElseThrow(() -> ApiException.notFound("Producto no encontrado"));
+    }
+
+    public ProductoRespuestaDTO crear(ProductoCrearDTO datos) {
+        Producto producto = productoDesde(datos);
+        return ProductoRespuestaDTO.fromEntity(crear(
+                producto, datos.getCategoriaId(), datos.getUsuarioId(), datos.getFotos()
+        ));
+    }
+
+    public ProductoRespuestaDTO actualizar(Long id, ProductoCrearDTO datos) {
+        Producto producto = productoDesde(datos);
+        return ProductoRespuestaDTO.fromEntity(actualizar(
+                id, datos.getUsuarioId(), producto, datos.getCategoriaId(), datos.getFotos()
+        ));
+    }
+
+    public ProductoRespuestaDTO actualizarStock(Long id, ActualizarStockDTO datos) {
+        return ProductoRespuestaDTO.fromEntity(actualizarStock(
+                id, datos.getUsuarioId(), datos.getStock()
+        ));
+    }
+
+    private Producto productoDesde(ProductoCrearDTO datos) {
+        Producto producto = new Producto();
+        producto.setNombre(datos.getNombre());
+        producto.setDescripcion(datos.getDescripcion());
+        producto.setPrecio(datos.getPrecio());
+        producto.setStock(datos.getStock());
+        return producto;
+    }
 
     public List<Producto> getAll() {
         return productoRepository.findAllByOrderByNombreAsc();

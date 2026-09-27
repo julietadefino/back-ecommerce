@@ -3,8 +3,6 @@ package com.uade.ecommerce.controller;
 import com.uade.ecommerce.dto.ActualizarStockDTO;
 import com.uade.ecommerce.dto.ProductoCrearDTO;
 import com.uade.ecommerce.dto.ProductoRespuestaDTO;
-import com.uade.ecommerce.exception.ApiException;
-import com.uade.ecommerce.model.Producto;
 import com.uade.ecommerce.service.ProductoService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -32,13 +30,9 @@ private ProductoService productoService;
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) Boolean conStock
     ) {
-        List<ProductoRespuestaDTO> productos =
-                productoService.buscar(categoriaId, nombre, conStock)
-                        .stream()
-                        .map(ProductoRespuestaDTO::fromEntity)
-                        .toList();
-
-        return ResponseEntity.ok(productos);
+        return ResponseEntity.ok(productoService.buscarRespuestas(
+                categoriaId, nombre, conStock
+        ));
     }
 
     @GetMapping("/buscar")
@@ -50,49 +44,25 @@ private ProductoService productoService;
             @RequestParam(required = false) BigDecimal precioMax,
             @PageableDefault(size = 10, sort = "nombre") Pageable pageable
     ) {
-        Page<ProductoRespuestaDTO> resultado =
-                productoService.buscarPaginado(
-                        categoriaId,
-                        nombre,
-                        conStock,
-                        precioMin,
-                        precioMax,
-                        pageable
-                ).map(ProductoRespuestaDTO::fromEntity);
-
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(productoService.buscarPaginadoRespuestas(
+                categoriaId, nombre, conStock, precioMin, precioMax, pageable
+        ));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductoRespuestaDTO> getById(
             @PathVariable Long id
     ) {
-        Producto producto = productoService.getById(id)
-                .orElseThrow(() ->
-                        ApiException.notFound("Producto no encontrado")
-                );
-
-        return ResponseEntity.ok(
-                ProductoRespuestaDTO.fromEntity(producto)
-        );
+        return ResponseEntity.ok(productoService.buscarRespuesta(id));
     }
 
     @PostMapping
     public ResponseEntity<ProductoRespuestaDTO> crear(
             @Valid @RequestBody ProductoCrearDTO datos
     ) {
-        Producto producto = crearProductoDesdeDTO(datos);
-
-        Producto guardado = productoService.crear(
-                producto,
-                datos.getCategoriaId(),
-                datos.getUsuarioId(),
-                datos.getFotos()
-        );
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ProductoRespuestaDTO.fromEntity(guardado));
+                .body(productoService.crear(datos));
     }
 
     @PutMapping("/{id}")
@@ -100,19 +70,7 @@ private ProductoService productoService;
             @PathVariable Long id,
             @Valid @RequestBody ProductoCrearDTO datos
     ) {
-        Producto nuevosDatos = crearProductoDesdeDTO(datos);
-
-        Producto actualizado = productoService.actualizar(
-                id,
-                datos.getUsuarioId(),
-                nuevosDatos,
-                datos.getCategoriaId(),
-                datos.getFotos()
-        );
-
-        return ResponseEntity.ok(
-                ProductoRespuestaDTO.fromEntity(actualizado)
-        );
+        return ResponseEntity.ok(productoService.actualizar(id, datos));
     }
 
     @PatchMapping("/{id}/stock")
@@ -120,15 +78,7 @@ private ProductoService productoService;
             @PathVariable Long id,
             @Valid @RequestBody ActualizarStockDTO datos
     ) {
-        Producto actualizado = productoService.actualizarStock(
-                id,
-                datos.getUsuarioId(),
-                datos.getStock()
-        );
-
-        return ResponseEntity.ok(
-                ProductoRespuestaDTO.fromEntity(actualizado)
-        );
+        return ResponseEntity.ok(productoService.actualizarStock(id, datos));
     }
 
     @DeleteMapping("/{id}")
@@ -141,12 +91,4 @@ private ProductoService productoService;
         return ResponseEntity.noContent().build();
     }
 
-    private Producto crearProductoDesdeDTO(ProductoCrearDTO datos) {
-        Producto producto = new Producto();
-        producto.setNombre(datos.getNombre());
-        producto.setDescripcion(datos.getDescripcion());
-        producto.setPrecio(datos.getPrecio());
-        producto.setStock(datos.getStock());
-        return producto;
-    }
 }
